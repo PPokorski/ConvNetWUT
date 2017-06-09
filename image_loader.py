@@ -10,7 +10,7 @@ def loadTestingDataset(testing_set_root_path):
         csv_reader = csv.reader(result_f, delimiter=';')
         next(csv_reader)
         for row in csv_reader:
-            images.append(np.array(image.load_img(testing_set_root_path + '/' + row[0], target_size=(150, 150, 3))))
+            images.append(np.array(image.load_img(testing_set_root_path + '/' + row[0], target_size=(224, 224, 3))))
             labels.append(row[7])
     return images, labels
 
@@ -26,7 +26,7 @@ def loadTrainingDataset(rootpath):
         # loop over all images in current annotations file
         for row in gtReader:
             try:
-                images.append(np.array(image.load_img(prefix + row[0], target_size=(150, 150, 3)))) # the 1th column is the filename
+                images.append(np.array(image.load_img(prefix + row[0], target_size=(224, 224, 3)))) # the 1th column is the filename
             except FileNotFoundError as e:
                 pass
 

@@ -22,7 +22,7 @@ drop = 0.96
 epochs_drop = 8.0
 
 min_delta = 0.01
-patience = 1
+patience = 3
 
 
 def learningRateDecay(epoch):
@@ -30,25 +30,15 @@ def learningRateDecay(epoch):
     return lrate
 
 
-X_test, Y_test = il.loadTestingDataset('/home/pokor/Downloads/SNR/GTSRB_Test/Final_Test/Images')
-X_test = np.array(X_test)
-Y_test = utils.to_categorical(Y_test, number_of_classes)
-
-print('Loaded test dataset!')
-
 train_datagen = ImageDataGenerator(
-        featurewise_center=True,
+        featurewise_center=False,
         samplewise_center=False,
-        featurewise_std_normalization=True,
+        featurewise_std_normalization=False,
         samplewise_std_normalization=False,
         zca_whitening=False,
         horizontal_flip=False,
         vertical_flip=False,
         fill_mode='nearest')
-
-train_datagen.fit(X_test)
-
-print('Fitted data!')
 
 
 train_generator = train_datagen.flow_from_directory(
@@ -77,7 +67,7 @@ predictions = Dense(number_of_classes, activation='softmax')(x)
 
 model = Model(inputs=base_model.input, outputs=predictions)
 
-early_stopping_callback = EarlyStopping(monitor='val_accuracy',
+early_stopping_callback = EarlyStopping(monitor='val_acc',
                                         min_delta=min_delta,
                                         patience=patience,
                                         verbose=1,
@@ -93,16 +83,24 @@ for layer in base_model.layers:
 model.compile(optimizer=SGD(lr=initial_lr, momentum=momentum),
               loss='categorical_crossentropy', metrics=["accuracy"])
 
-history = model.fit_generator(train_generator,
-            samples_per_epoch=train_generator.samples,
-            nb_epoch=20,
+history = model.fit_generator(
+            train_generator,
+            steps_per_epoch=train_generator.samples // batch_size,
+            epochs=25,
             validation_data=validation_generator,
-            nb_val_samples=validation_generator.samples,
+            validation_steps=validation_generator.samples // batch_size,
             callbacks=[early_stopping_callback,
                        learning_rate_callback,
                        csv_logger_callback])
 
 model.save_weights('inceptionV3_weights.h5')
+
+
+X_test, Y_test = il.loadTestingDataset('/home/pokor/Downloads/SNR/GTSRB_Test/Final_Test/Images')
+X_test = np.array(X_test)
+Y_test = utils.to_categorical(Y_test, number_of_classes)
+
+print('Loaded test dataset!')
 
 evaluation = model.evaluate(X_test, Y_test, batch_size=batch_size)
 
